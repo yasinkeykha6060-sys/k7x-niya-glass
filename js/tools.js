@@ -180,10 +180,26 @@ export function renderStroke(outline, paint, stroke) {
   const tool = stroke.tool;
   paths.forEach((path) => {
     if (path.length < 1) return;
-    if (tool === "brush") {
+    if (tool === "brush" || tool === "wash" || tool === "flat") {
       const ctx = paint.getContext("2d");
-      walk(path, Math.max(1.5, stroke.size * 0.28), (point) => {
-        stamp(ctx, point.x, point.y, widthOf(point) * 0.55, stroke.color, stroke.alpha || 0.8, null, w, h);
+      const soft = tool === "wash";
+      const wide = tool === "flat";
+      walk(path, Math.max(1.4, stroke.size * (soft ? 0.16 : 0.28)), (point) => {
+        const radius = widthOf(point) * (soft ? 1.05 : wide ? 0.7 : 0.55);
+        const alpha = (stroke.alpha || 0.8) * (soft ? 0.42 : 1);
+        if (!wide) {
+          stamp(ctx, point.x, point.y, radius, stroke.color, alpha, null, w, h);
+          return;
+        }
+        ctx.save();
+        ctx.translate(point.x, point.y);
+        ctx.rotate(-0.4);
+        ctx.globalAlpha = alpha;
+        ctx.fillStyle = stroke.color;
+        ctx.beginPath();
+        ctx.ellipse(0, 0, radius * 1.7, radius * 0.42, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
       });
       return;
     }

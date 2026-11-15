@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#ff85ad">
+  <meta name="theme-color" content="#3b1b2a">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <title>شیشه‌ی نیایش</title>
@@ -20,7 +20,6 @@
   <section id="welcome" class="welcome">
     <div class="card">
       <h1 id="welcomeTitle"></h1>
-      <p id="welcomeSweet" class="sweet"></p>
       <p id="welcomeText"></p>
       <p id="daily" class="daily"></p>
       <button id="startBtn" class="btn" type="button"></button>
@@ -31,11 +30,11 @@
       <button id="btnMenu" class="btn ghost" type="button"></button>
       <div class="brand-wrap">
         <h1 id="brand"></h1>
-        <p id="sweet" class="sweet"></p>
       </div>
       <button id="btnUndo" class="btn ghost" type="button"></button>
       <button id="btnRedo" class="btn ghost" type="button"></button>
       <button id="btnLight" class="btn" type="button"></button>
+      <button id="btnPhoto" class="btn" type="button"></button>
       <button id="btnSave" class="btn" type="button"></button>
     </header>
     <div class="workspace">
@@ -46,6 +45,7 @@
         <button id="btnLove" class="love" type="button">💌</button>
       </div>
     </div>
+    <div id="colors" class="colors"></div>
     <div class="quick">
       <label id="sizeLabel" for="sizeRange"></label>
       <input id="sizeRange" type="range" min="2" max="64" value="14">
@@ -58,6 +58,7 @@
   <div id="toast" class="toast" hidden></div>
   <div id="cheer" class="cheer" hidden></div>
   <div id="bloom" class="bloom" hidden></div>
+  <input id="fileCamera" type="file" accept="image/*" capture="environment" hidden>
   <input id="fileTrace" type="file" accept="image/*" hidden>
   <input id="fileBackup" type="file" accept="application/json,.json" hidden>
   <script type="module" src="js/main.js"></script>

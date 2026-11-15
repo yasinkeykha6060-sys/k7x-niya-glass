@@ -48,6 +48,8 @@ function toolsPanel(app) {
     ["liner", "✒️ " + S.liner],
     ["dots", "🔵 " + S.dots],
     ["brush", "🖌️ " + S.brush],
+    ["wash", "🫧 " + S.wash],
+    ["flat", "▭ " + S.flat],
     ["fill", "🪣 " + S.fill],
     ["glitter", "✨ " + S.glitter],
     ["metal", "🥇 " + S.metal],
@@ -65,7 +67,7 @@ function toolsPanel(app) {
   });
   root.append(grid);
   root.append(slider(S.size, 2, 64, 1, app.state.size, app.setSize));
-  if (app.state.tool === "brush" || app.state.tool === "fill" || app.state.tool === "glitter") {
+  if (app.state.tool === "brush" || app.state.tool === "wash" || app.state.tool === "flat" || app.state.tool === "fill" || app.state.tool === "glitter") {
     root.append(slider(S.alpha, 0.45, 0.9, 0.01, app.state.alpha, app.setAlpha));
   }
   if (app.state.tool === "fill") {
@@ -224,7 +226,7 @@ function galleryPanel(app, items) {
 export function renderDock(dock, app) {
   const S = app.S;
   dock.innerHTML = "";
-  [["liner", "✒️", S.liner], ["dots", "🔵", S.dots], ["brush", "🖌️", S.brush], ["fill", "🪣", S.fill], ["glitter", "✨", S.glitter], ["metal", "🥇", S.metal], ["eraser", "🧽", S.eraser], ["drop", "💧", S.drop], ["pan", "✋", S.pan]].forEach(([id, icon, label]) => {
+  [["liner", "✒️", S.liner], ["dots", "●", S.dots], ["brush", "🖌️", S.brush], ["wash", "🫧", S.wash], ["flat", "▭", S.flat], ["fill", "🪣", S.fill], ["glitter", "✨", S.glitter], ["metal", "🥇", S.metal], ["eraser", "🧽", S.eraser], ["erasePaint", "◌", S.erasePaint], ["drop", "💧", S.drop], ["pan", "✋", S.pan]].forEach(([id, icon, label]) => {
     const node = el("button", "tool" + (app.state.tool === id ? " on" : ""));
     node.type = "button";
     node.textContent = icon + " " + label;

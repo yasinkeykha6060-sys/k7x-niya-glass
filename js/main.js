@@ -70,9 +70,8 @@ let panning = null;
 let refDrag = null;
 let holdTimer = 0;
 let lastTime = 0;
-let cheerTimer = 0;
-let cheerAt = 4;
 let toastTimer = 0;
+let photoUrl = "";
 let panelToken = 0;
 
 const welcome = document.querySelector("#welcome");
@@ -82,7 +81,6 @@ const dock = document.querySelector("#dock");
 const tabs = document.querySelector("#tabs");
 const modal = document.querySelector("#modal");
 const toast = document.querySelector("#toast");
-const cheerBox = document.querySelector("#cheer");
 const sizeRange = document.querySelector("#sizeRange");
 const quickColor = document.querySelector("#quickColor");
 const btnLight = document.querySelector("#btnLight");
@@ -106,28 +104,6 @@ function toastMsg(text) {
   toast.hidden = false;
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => { toast.hidden = true; }, 3200);
-}
-
-function cheer() {
-  cheerBox.textContent = CONFIG.cheers[cheerAt % CONFIG.cheers.length];
-  cheerAt += 1;
-  cheerBox.hidden = false;
-  clearTimeout(cheerTimer);
-  cheerTimer = setTimeout(() => { cheerBox.hidden = true; }, 3200);
-}
-
-function bloom() {
-  const layer = document.querySelector("#bloom");
-  layer.innerHTML = "";
-  layer.hidden = false;
-  for (let i = 0; i < 14; i += 1) {
-    const bit = document.createElement("i");
-    bit.textContent = i % 2 ? "💗" : "🌸";
-    bit.style.left = (8 + Math.random() * 84) + "%";
-    bit.style.animationDelay = (Math.random() * 0.4) + "s";
-    layer.append(bit);
-  }
-  setTimeout(() => { layer.hidden = true; layer.innerHTML = ""; }, 2700);
 }
 
 function scene() {
@@ -165,6 +141,7 @@ const app = {
     state.color = color;
     state.recent = [color, ...state.recent.filter((item) => item !== color)].slice(0, 8);
     paintQuick();
+    paintColors();
     if (tab === "colors") refresh();
   },
   setLiner(color) { state.liner = color; paintQuick(); },
@@ -501,7 +478,6 @@ function doFill(x, y) {
   fills += 1;
   if (spot) flash = { x: spot.cx, y: spot.cy, life: 1 };
   if (state.sound) audio.chime();
-  if (fills % 3 === 0) cheer();
   dirty = true;
   dirtyDoc = true;
 }
@@ -566,8 +542,6 @@ async function saveNow(celebrate) {
     dirtyDoc = false;
     if (celebrate) {
       if (state.sound) audio.chord();
-      bloom();
-      cheer();
       toastMsg(S.saved);
     }
     if (tab === "gallery") refresh();
@@ -795,6 +769,39 @@ function askName(value) {
   });
 }
 
+function downloadAnchor(url, filename, label) {
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  link.className = "btn";
+  link.textContent = label;
+  return link;
+}
+
+async function openPhoto() {
+  try {
+    const kind = state.mode === "table" ? "table" : "light";
+    const blob = await renderPNG(surface.outline, surface.paint, scene(), kind);
+    if (photoUrl) URL.revokeObjectURL(photoUrl);
+    photoUrl = URL.createObjectURL(blob);
+    const filename = (docName || "niyayesh") + ".png";
+    openModal(S.photoTitle, (body, actions) => {
+      const img = document.createElement("img");
+      img.src = photoUrl;
+      img.alt = "";
+      const note = document.createElement("p");
+      note.className = "note";
+      note.textContent = S.photoReady;
+      body.append(img, note);
+      actions.append(downloadAnchor(photoUrl, filename, S.photoLink));
+      actions.append(btn(S.photoShot, () => document.querySelector("#fileCamera").click(), "ghost"));
+      actions.append(btn(S.share, () => shareCurrent(kind), "ghost"));
+    });
+  } catch (error) {
+    toastMsg(S.noSave);
+  }
+}
+
 function openMenu() {
   openModal(S.menu, (body, actions) => {
     const stack = document.createElement("div");
@@ -872,13 +879,24 @@ function fillChrome() {
   document.querySelector("#btnSave").textContent = S.save;
   document.querySelector("#btnFit").textContent = S.fit;
   document.querySelector("#btnLove").setAttribute("aria-label", S.love);
-  paintSweet();
+  document.querySelector("#btnPhoto").textContent = S.photo;
+  paintColors();
   paintQuick();
 }
 
-function paintSweet() {
-  const line = CONFIG.cheers[cheerAt % CONFIG.cheers.length];
-  document.querySelectorAll(".sweet").forEach((node) => { node.textContent = line; });
+function paintColors() {
+  const rail = document.querySelector("#colors");
+  rail.innerHTML = "";
+  const current = state.color.toLowerCase();
+  CONFIG.colors.forEach((color) => {
+    const node = document.createElement("button");
+    node.type = "button";
+    node.className = "swatch" + (color.toLowerCase() === current ? " on" : "");
+    node.style.background = color;
+    node.setAttribute("aria-label", color);
+    node.addEventListener("click", () => app.setColor(color));
+    rail.append(node);
+  });
 }
 
 view.addEventListener("pointerdown", pointerDown, { passive: false });
@@ -924,6 +942,7 @@ document.querySelector("#btnMenu").addEventListener("click", openMenu);
 document.querySelector("#btnUndo").addEventListener("click", undoAction);
 document.querySelector("#btnRedo").addEventListener("click", redoAction);
 document.querySelector("#btnSave").addEventListener("click", () => saveNow(true));
+document.querySelector("#btnPhoto").addEventListener("click", () => openPhoto());
 document.querySelector("#btnLight").addEventListener("click", () => {
   state.mode = state.mode === "back" ? "table" : "back";
   dirty = true;
@@ -939,6 +958,28 @@ document.querySelector("#btnLove").addEventListener("click", () => {
 });
 sizeRange.addEventListener("input", () => { state.size = Number(sizeRange.value); });
 quickColor.addEventListener("click", () => app.openTab("colors"));
+document.querySelector("#fileCamera").addEventListener("change", async (event) => {
+  const file = event.target.files && event.target.files[0];
+  event.target.value = "";
+  if (!file) return;
+  try {
+    const image = await blobImage(file);
+    const url = URL.createObjectURL(file);
+    state.ref = { img: image, x: 0.12, y: 0.12, scale: 0.76, alpha: 0.35 };
+    state.tool = "trace";
+    dirty = true;
+    openModal(S.photoShot, (body, actions) => {
+      const img = document.createElement("img");
+      img.src = url;
+      img.alt = "";
+      body.append(img);
+      actions.append(downloadAnchor(url, "niyayesh-photo.jpg", S.photoLink));
+      actions.append(btn(S.photoUnder, () => { closeModal(); refresh(); }));
+    });
+  } catch (error) {
+    toastMsg(S.noSave);
+  }
+});
 document.querySelector("#fileTrace").addEventListener("change", async (event) => {
   const file = event.target.files && event.target.files[0];
   event.target.value = "";
@@ -1003,7 +1044,6 @@ fillChrome();
 applySize("medium", false);
 refresh();
 requestAnimationFrame(frame);
-setInterval(() => { cheerAt += 1; paintSweet(); }, 8000);
 fetch("assets/music.mp3").then((response) => {
   if (!response.ok) return null;
   return audio.loadMusic("assets/music.mp3");

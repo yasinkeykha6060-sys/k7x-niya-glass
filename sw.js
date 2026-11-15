@@ -1,4 +1,4 @@
-const CACHE = "niya-glass-v1";
+const CACHE = "niya-glass-v2";
 const FILES = [
   "./",
   "./index.html",
