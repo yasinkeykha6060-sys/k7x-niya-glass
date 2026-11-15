@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#3b1b2a">
+  <meta name="theme-color" content="#f4f1ec">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <title>شیشه‌ی نیایش</title>
@@ -31,8 +31,6 @@
       <div class="brand-wrap">
         <h1 id="brand"></h1>
       </div>
-      <button id="btnUndo" class="btn ghost" type="button"></button>
-      <button id="btnRedo" class="btn ghost" type="button"></button>
       <button id="btnLight" class="btn" type="button"></button>
       <button id="btnPhoto" class="btn" type="button"></button>
       <button id="btnSave" class="btn" type="button"></button>
@@ -45,14 +43,20 @@
         <button id="btnLove" class="love" type="button">💌</button>
       </div>
     </div>
-    <div id="colors" class="colors"></div>
-    <div class="quick">
-      <label id="sizeLabel" for="sizeRange"></label>
-      <input id="sizeRange" type="range" min="2" max="64" value="14">
-      <button id="quickColor" class="swatch" type="button" aria-label="رنگ"></button>
-    </div>
-    <nav id="tabs" class="tabs"></nav>
-    <nav id="dock" class="dock"></nav>
+    <footer class="bench">
+      <div class="quick">
+        <button id="btnUndo" class="btn ghost" type="button"></button>
+        <button id="btnRedo" class="btn ghost" type="button"></button>
+        <button id="btnFresh" class="btn ghost" type="button"></button>
+        <label id="sizeLabel" for="sizeRange"></label>
+        <strong id="sizeValue">14</strong>
+        <input id="sizeRange" type="range" min="2" max="64" value="14">
+        <button id="quickColor" class="swatch" type="button" aria-label="رنگ"></button>
+      </div>
+      <div id="colors" class="colors"></div>
+      <nav id="tabs" class="tabs"></nav>
+      <nav id="dock" class="dock"></nav>
+    </footer>
   </div>
   <div id="modal" class="modal" hidden></div>
   <div id="toast" class="toast" hidden></div>

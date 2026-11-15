@@ -170,7 +170,7 @@ function plansPanel(app) {
   root.append(sizes);
   root.append(el("h2", "", S.frame));
   const frames = el("div", "row");
-  [["gold", S.frameGold], ["wood", S.frameWood], ["rose", S.frameRose]].forEach(([id, label]) => {
+  [["clear", S.frameClear], ["gold", S.frameGold], ["wood", S.frameWood], ["rose", S.frameRose]].forEach(([id, label]) => {
     frames.append(btn(label, () => app.setFrame(id), app.state.frame === id ? "" : "ghost"));
   });
   root.append(frames);

@@ -31,18 +31,22 @@ export function paintScene(ctx, w, h, scene) {
   const pad = Math.min(w, h) * 0.045;
   const radius = Math.max(10, Math.min(w, h) * 0.018);
   ctx.save();
-  if (scene.mode === "table") {
-    ctx.fillStyle = "rgba(20, 8, 14, 0.28)";
-    roundRect(ctx, -pad + w * 0.012, -pad + h * 0.02, w + pad * 2, h + pad * 2, radius + 8);
-    ctx.fill();
+  ctx.fillStyle = "rgba(90, 70, 60, 0.16)";
+  roundRect(ctx, w * 0.012, h * 0.018, w, h, radius);
+  ctx.fill();
+  if (scene.frame !== "clear") {
+    ctx.lineWidth = Math.max(10, pad * 0.55);
+    ctx.strokeStyle = frameStyle(ctx, -pad, -pad, w + pad * 2, h + pad * 2, scene.frame);
+    roundRect(ctx, -pad * 0.12, -pad * 0.12, w + pad * 0.24, h + pad * 0.24, radius + 2);
+    ctx.stroke();
   }
-  ctx.lineWidth = Math.max(14, pad * 0.85);
-  ctx.strokeStyle = frameStyle(ctx, -pad, -pad, w + pad * 2, h + pad * 2, scene.frame);
-  roundRect(ctx, -pad * 0.2, -pad * 0.2, w + pad * 0.4, h + pad * 0.4, radius + 4);
+  ctx.lineWidth = Math.max(2, w * 0.004);
+  ctx.strokeStyle = "rgba(255,255,255,0.95)";
+  roundRect(ctx, 1, 1, w - 2, h - 2, radius);
   ctx.stroke();
-  ctx.lineWidth = Math.max(3, pad * 0.16);
-  ctx.strokeStyle = "rgba(255,255,255,0.35)";
-  roundRect(ctx, pad * 0.08, pad * 0.08, w - pad * 0.16, h - pad * 0.16, radius);
+  ctx.strokeStyle = "rgba(70, 60, 55, 0.35)";
+  ctx.lineWidth = Math.max(1.5, w * 0.002);
+  roundRect(ctx, 0, 0, w, h, radius);
   ctx.stroke();
 
   roundRect(ctx, 0, 0, w, h, radius);
@@ -55,10 +59,7 @@ export function paintScene(ctx, w, h, scene) {
     glow.addColorStop(1, "#e7a0c4");
     ctx.fillStyle = glow;
   } else {
-    const linen = ctx.createLinearGradient(0, 0, 0, h);
-    linen.addColorStop(0, "#fff9f4");
-    linen.addColorStop(1, "#f0ddd2");
-    ctx.fillStyle = linen;
+    ctx.fillStyle = "rgba(255, 255, 255, 0.16)";
   }
   ctx.fillRect(0, 0, w, h);
 
@@ -92,10 +93,11 @@ export function paintScene(ctx, w, h, scene) {
   ctx.drawImage(scene.outline, 0, 0);
 
   const pane = ctx.createLinearGradient(0, 0, 0, h);
-  pane.addColorStop(0, "rgba(255,255,255,0.2)");
-  pane.addColorStop(0.2, "rgba(255,255,255,0.03)");
+  const soft = scene.mode === "table" ? 0.45 : 1;
+  pane.addColorStop(0, "rgba(255,255,255," + (0.22 * soft) + ")");
+  pane.addColorStop(0.18, "rgba(255,255,255," + (0.04 * soft) + ")");
   pane.addColorStop(0.8, "rgba(255,255,255,0)");
-  pane.addColorStop(1, "rgba(40, 16, 24, 0.12)");
+  pane.addColorStop(1, "rgba(40, 30, 24," + (0.1 * soft) + ")");
   ctx.fillStyle = pane;
   ctx.fillRect(0, 0, w, h);
 

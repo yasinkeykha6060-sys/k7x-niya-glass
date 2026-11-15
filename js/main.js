@@ -26,11 +26,11 @@ const state = {
   symmetry: 1,
   mirror: true,
   straight: false,
-  mode: "back",
+  mode: "table",
   gap: 2,
   fillMode: "solid",
   quality: "full",
-  frame: "gold",
+  frame: "clear",
   sizeId: "medium",
   eraseTarget: "both",
   hue: 336,
@@ -123,6 +123,7 @@ function scene() {
 function paintQuick() {
   quickColor.style.background = state.color;
   sizeRange.value = String(state.size);
+  document.querySelector("#sizeValue").textContent = String(state.size);
   btnLight.textContent = state.mode === "back" ? "☀️ " + S.light : "🪟 " + S.table;
   document.querySelector("#sizeLabel").textContent = S.size;
 }
@@ -243,16 +244,21 @@ function undoAction() {
   surface.restore(undo.pop());
   dirty = true;
   dirtyDoc = true;
+  surface.draw(scene());
 }
 
 function redoAction() {
-  if (stroke || !redo.length) return;
+  if (stroke || !redo.length) {
+    if (!stroke && !redo.length) toastMsg(S.nothingRedo);
+    return;
+  }
   undo.push(surface.snapshot());
   const command = redoHist.pop();
   if (command) history.push(command);
   surface.restore(redo.pop());
   dirty = true;
   dirtyDoc = true;
+  surface.draw(scene());
 }
 
 function strokeCommand() {
@@ -340,7 +346,8 @@ function pointerDownBody(event) {
     metal: state.metal,
     symmetry: state.symmetry,
     mirror: state.mirror && state.symmetry > 1,
-    eraseTarget: state.eraseTarget
+    eraseTarget: state.eraseTarget,
+    pointerId: event.pointerId
   };
   pushPoint(event, world);
   if (!stroke.straight) {
@@ -416,11 +423,12 @@ function cancelStroke() {
 }
 
 function pointerUp(event) {
+  const drawing = !!(stroke && stroke.pointerId === event.pointerId);
   pointers.delete(event.pointerId);
   if (pointers.size < 2) pinch = null;
   if (panning && panning.id === event.pointerId) panning = null;
   if (refDrag && refDrag.id === event.pointerId) refDrag = null;
-  if (!stroke) return;
+  if (!drawing) return;
   clearTimeout(holdTimer);
   if (stroke.points.length) {
     redrawStroke();
@@ -723,18 +731,29 @@ function closeModal() {
   modal.innerHTML = "";
 }
 
-function openModal(title, build) {
+function openModal(title, build, onClose) {
   closeModal();
   modal.hidden = false;
   const card = document.createElement("div");
   card.className = "card";
+  const close = document.createElement("button");
+  close.type = "button";
+  close.className = "x";
+  close.textContent = "×";
+  close.setAttribute("aria-label", S.close);
+  close.addEventListener("click", () => { closeModal(); if (onClose) onClose(); });
   const heading = document.createElement("h2");
   heading.textContent = title;
   const body = document.createElement("div");
   const actions = document.createElement("div");
   actions.className = "row";
-  card.append(heading, body, actions);
+  card.append(close, heading, body, actions);
   modal.append(card);
+  modal.onclick = (event) => {
+    if (event.target !== modal) return;
+    closeModal();
+    if (onClose) onClose();
+  };
   build(body, actions);
 }
 
@@ -752,7 +771,7 @@ function confirmBox(text) {
     openModal(text, (body, actions) => {
       actions.append(btn(S.yes, () => { closeModal(); resolve(true); }));
       actions.append(btn(S.no, () => { closeModal(); resolve(false); }, "ghost"));
-    });
+    }, () => resolve(false));
   });
 }
 
@@ -765,7 +784,7 @@ function askName(value) {
       body.append(input);
       actions.append(btn(S.save, () => { closeModal(); resolve(input.value.trim()); }));
       actions.append(btn(S.no, () => { closeModal(); resolve(""); }, "ghost"));
-    });
+    }, () => resolve(""));
   });
 }
 
@@ -876,6 +895,7 @@ function fillChrome() {
   document.querySelector("#btnMenu").textContent = S.menu;
   document.querySelector("#btnUndo").textContent = S.undo;
   document.querySelector("#btnRedo").textContent = S.redo;
+  document.querySelector("#btnFresh").textContent = S.fresh;
   document.querySelector("#btnSave").textContent = S.save;
   document.querySelector("#btnFit").textContent = S.fit;
   document.querySelector("#btnLove").setAttribute("aria-label", S.love);
@@ -941,6 +961,7 @@ document.querySelector("#startBtn").addEventListener("click", () => {
 document.querySelector("#btnMenu").addEventListener("click", openMenu);
 document.querySelector("#btnUndo").addEventListener("click", undoAction);
 document.querySelector("#btnRedo").addEventListener("click", redoAction);
+document.querySelector("#btnFresh").addEventListener("click", () => newDoc());
 document.querySelector("#btnSave").addEventListener("click", () => saveNow(true));
 document.querySelector("#btnPhoto").addEventListener("click", () => openPhoto());
 document.querySelector("#btnLight").addEventListener("click", () => {
@@ -956,7 +977,10 @@ document.querySelector("#btnLove").addEventListener("click", () => {
     body.append(text);
   });
 });
-sizeRange.addEventListener("input", () => { state.size = Number(sizeRange.value); });
+sizeRange.addEventListener("input", () => {
+  state.size = Number(sizeRange.value);
+  document.querySelector("#sizeValue").textContent = String(state.size);
+});
 quickColor.addEventListener("click", () => app.openTab("colors"));
 document.querySelector("#fileCamera").addEventListener("change", async (event) => {
   const file = event.target.files && event.target.files[0];
