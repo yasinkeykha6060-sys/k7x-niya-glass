@@ -11,15 +11,21 @@ export function parseHex(hex) {
 function dilate(mask, w, h, radius) {
   const r = Math.max(0, Math.min(8, radius | 0));
   if (!r) return mask;
-  const out = new Uint8Array(mask.length);
+  const mid = new Uint8Array(mask.length);
   for (let y = 0; y < h; y += 1) {
+    const row = y * w;
     for (let x = 0; x < w; x += 1) {
-      if (!mask[y * w + x]) continue;
+      if (!mask[row + x]) continue;
+      mid.fill(1, row + Math.max(0, x - r), row + Math.min(w - 1, x + r) + 1);
+    }
+  }
+  const out = new Uint8Array(mask.length);
+  for (let x = 0; x < w; x += 1) {
+    for (let y = 0; y < h; y += 1) {
+      if (!mid[y * w + x]) continue;
       const y0 = Math.max(0, y - r);
       const y1 = Math.min(h - 1, y + r);
-      const x0 = Math.max(0, x - r);
-      const x1 = Math.min(w - 1, x + r);
-      for (let yy = y0; yy <= y1; yy += 1) out.fill(1, yy * w + x0, yy * w + x1 + 1);
+      for (let yy = y0; yy <= y1; yy += 1) out[yy * w + x] = 1;
     }
   }
   return out;
@@ -84,7 +90,9 @@ export function glassFill(outline, paint, x, y, style) {
   for (let i = 0, p = 0; i < mask.length; i += 1, p += 4) {
     if (walls[p + 3] > 36) mask[i] = 1;
   }
+  if (mask[iy * w + ix]) return { ok: false, reason: "wall" };
   const thick = dilate(mask, w, h, style.gap == null ? 2 : style.gap);
+  if (thick[iy * w + ix]) return { ok: false, reason: "wall" };
   const region = flood(thick, w, h, ix, iy);
   if (!region) return { ok: false, reason: "leak" };
   const ctx = paint.getContext("2d", { willReadFrequently: true });

@@ -43,6 +43,8 @@ export function renderPNG(outline, paint, scene, kind) {
     canvas.width = w + pad * 2;
     canvas.height = h + pad * 2;
     const ctx = canvas.getContext("2d");
+    ctx.fillStyle = kind === "table" ? "#f6f3ee" : "#f3d5e4";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.translate(pad, pad);
     paintScene(ctx, w, h, {
       ...scene,
@@ -53,7 +55,7 @@ export function renderPNG(outline, paint, scene, kind) {
       mode: kind === "table" ? "table" : "back"
     });
   }
-  return new Promise((resolve) => canvas.toBlob((blob) => resolve(blob), "image/png"));
+  return new Promise((resolve, reject) => canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error("blob"))), "image/png"));
 }
 
 export function videoSupported() {

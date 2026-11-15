@@ -1,4 +1,4 @@
-const CACHE = "niya-glass-v3";
+const CACHE = "niya-glass-v4";
 const FILES = [
   "./",
   "./index.html",
@@ -33,26 +33,14 @@ self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
   const url = new URL(event.request.url);
   if (url.origin !== self.location.origin) return;
-  const fresh = event.request.mode === "navigate" || url.pathname.endsWith("/sw.js");
   event.respondWith((async () => {
     const cache = await caches.open(CACHE);
-    if (fresh) {
-      try {
-        const response = await fetch(event.request);
-        if (response && response.ok) cache.put(event.request, response.clone());
-        return response;
-      } catch (error) {
-        return (await cache.match(event.request)) || cache.match("./index.html");
-      }
-    }
-    const hit = await cache.match(event.request);
-    if (hit) return hit;
     try {
       const response = await fetch(event.request);
       if (response && response.ok) cache.put(event.request, response.clone());
       return response;
     } catch (error) {
-      return cache.match("./index.html");
+      return (await cache.match(event.request)) || cache.match("./index.html");
     }
   })());
 });

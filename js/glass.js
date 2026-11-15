@@ -31,9 +31,14 @@ export function paintScene(ctx, w, h, scene) {
   const pad = Math.min(w, h) * 0.045;
   const radius = Math.max(10, Math.min(w, h) * 0.018);
   ctx.save();
-  ctx.fillStyle = "rgba(90, 70, 60, 0.16)";
-  roundRect(ctx, w * 0.012, h * 0.018, w, h, radius);
+  ctx.save();
+  ctx.shadowColor = "rgba(80, 60, 50, 0.22)";
+  ctx.shadowBlur = Math.max(12, Math.min(w, h) * 0.03);
+  ctx.shadowOffsetY = Math.max(8, h * 0.012);
+  ctx.fillStyle = scene.mode === "table" ? "#f7f4ef" : "#fff6ea";
+  roundRect(ctx, 0, 0, w, h, radius);
   ctx.fill();
+  ctx.restore();
   if (scene.frame !== "clear") {
     ctx.lineWidth = Math.max(10, pad * 0.55);
     ctx.strokeStyle = frameStyle(ctx, -pad, -pad, w + pad * 2, h + pad * 2, scene.frame);
@@ -59,7 +64,7 @@ export function paintScene(ctx, w, h, scene) {
     glow.addColorStop(1, "#e7a0c4");
     ctx.fillStyle = glow;
   } else {
-    ctx.fillStyle = "rgba(255, 255, 255, 0.16)";
+    ctx.fillStyle = "rgba(255, 255, 255, 0.28)";
   }
   ctx.fillRect(0, 0, w, h);
 

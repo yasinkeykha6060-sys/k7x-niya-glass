@@ -72,6 +72,8 @@ let holdTimer = 0;
 let lastTime = 0;
 let toastTimer = 0;
 let photoUrl = "";
+let thumbUrls = [];
+let tiltReady = false;
 let panelToken = 0;
 
 const welcome = document.querySelector("#welcome");
@@ -166,6 +168,7 @@ const app = {
     state[key] = value;
     state.color = hslToHex(state.hue, state.sat, state.lit);
     paintQuick();
+    paintColors();
   },
   setFrame(id) { state.frame = id; dirty = true; refresh(); },
   setPetals(value) { state.petals = value; },
@@ -461,13 +464,15 @@ function doFill(x, y) {
   };
   let ok = false;
   let spot = null;
+  let reason = "leak";
   symmetryPoints(x, y, state.symmetry, state.mirror && state.symmetry > 1, surface.width, surface.height).forEach((point) => {
     const result = glassFill(surface.outline, surface.paint, point.x, point.y, style);
     if (result.ok) { ok = true; spot = result; }
+    else reason = result.reason || reason;
   });
   if (!ok) {
     surface.restore(undo.pop());
-    toastMsg(S.leak);
+    toastMsg(reason === "wall" ? S.onLine : S.leak);
     dirty = true;
     return;
   }
@@ -510,7 +515,7 @@ async function clearAll() {
 }
 
 function toBlob(canvas) {
-  return new Promise((resolve) => canvas.toBlob((blob) => resolve(blob), "image/png"));
+  return new Promise((resolve, reject) => canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error("blob"))), "image/png"));
 }
 
 async function makeThumb() {
@@ -587,6 +592,9 @@ async function openDrawing(id) {
     createdAt = item.createdAt || Date.now();
     state.mode = item.mode || state.mode;
     state.frame = item.frame || state.frame;
+    if (item.sizeId) state.sizeId = item.sizeId;
+    surface.resetView();
+    if (!wide) panel.classList.add("closed");
     undo = [];
     redo = [];
     redoHist = [];
@@ -601,12 +609,14 @@ async function openDrawing(id) {
 
 async function loadGallery() {
   try {
+    thumbUrls.forEach((url) => URL.revokeObjectURL(url));
+    thumbUrls = [];
     const items = await listDrawings();
-    return items.map((item) => ({
-      id: item.id,
-      name: item.name,
-      thumbUrl: item.thumb ? URL.createObjectURL(item.thumb) : ""
-    }));
+    return items.map((item) => {
+      const thumbUrl = item.thumb ? URL.createObjectURL(item.thumb) : "";
+      if (thumbUrl) thumbUrls.push(thumbUrl);
+      return { id: item.id, name: item.name, thumbUrl };
+    });
   } catch (error) {
     toastMsg(S.noSave);
     return [];
@@ -653,7 +663,8 @@ async function downloadStored(id, share) {
   paint.width = item.w; paint.height = item.h;
   if (o) outline.getContext("2d").drawImage(o, 0, 0);
   if (p) paint.getContext("2d").drawImage(p, 0, 0);
-  const blob = await renderPNG(outline, paint, { mode: item.mode || "back", frame: item.frame || "gold", lx: 0.34, ly: 0.3, quality: "full" }, "light");
+  const kind = item.mode === "back" ? "light" : "table";
+  const blob = await renderPNG(outline, paint, { mode: item.mode || "table", frame: item.frame || "clear", lx: 0.34, ly: 0.3, quality: "full" }, kind);
   if (share) {
     try {
       const shared = await shareBlob(blob, (item.name || "niyayesh") + ".png", CONFIG.brand);
@@ -854,6 +865,7 @@ function elNote(text) {
 }
 
 async function enableTilt() {
+  if (tiltReady) { toastMsg(S.tiltOn); return; }
   try {
     const orientation = window.DeviceOrientationEvent;
     if (orientation && typeof orientation.requestPermission === "function") {
@@ -865,6 +877,7 @@ async function enableTilt() {
       tilt.x = clamp(event.gamma / 70, -0.28, 0.28);
       tilt.y = clamp((event.beta - 45) / 90, -0.22, 0.22);
     });
+    tiltReady = true;
     toastMsg(S.tiltOn);
   } catch (error) {
     toastMsg(S.noTilt);
@@ -880,9 +893,12 @@ async function newDoc() {
   undo = [];
   redo = [];
   redoHist = [];
+  state.ref = null;
   surface.clear();
+  surface.resetView();
   dirty = true;
   dirtyDoc = false;
+  surface.draw(scene());
 }
 
 function fillChrome() {
